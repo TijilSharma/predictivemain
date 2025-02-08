@@ -51,6 +51,7 @@ def load_data():
     file_path = f"{UPLOAD_FOLDER}/{latest_file}"
 
     test_df = pd.read_csv(file_path, sep=" ", header=None)
+    initial_json = test_df.to_json(orient="records")
 
     # Load the LSTM model
     model = load_model("LSTM_RUL.h5")
@@ -106,12 +107,12 @@ def load_data():
     W1 = 122
     W0 = 47
     def classify_health(rul):
-    if rul > W1:
-        return "Low Risk"
-    elif W0 <= rul <= W1:
-        return "Medium Risk"
-    else:
-        return "High Risk"
+        if rul > W1:
+            return "Low Risk"
+        elif W0 <= rul <= W1:
+            return "Medium Risk"
+        else:
+            return "High Risk"
 
     def schedule_maintenance(rul):
         if rul > W1:
@@ -129,4 +130,4 @@ def load_data():
     # Convert DataFrame to JSON
     json_data = health_df.to_dict(orient="records")
 
-    return {"filename": latest_file, "data": json_data}
+    return {"filename": latest_file,"original_data":intial_json, "final_data": json_data}
