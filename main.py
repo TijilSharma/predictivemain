@@ -84,7 +84,7 @@ def load_data():
     print(f"Shape of test sequences: {seq_array_test_last.shape}")
 
     # Predict Remaining Useful Life (RUL)
-    predictions = model.predict(seq_array_test_last)
+    predictions_scaled = model.predict(seq_array_test_last)
     print("Predictions generated successfully!")
 
     # Scale predictions back to original range
