@@ -41,7 +41,7 @@ async def upload_csv(file: UploadFile = File(...)):
 
     return {"filename": file.filename, "location": file_location}
 
-@app.api_route("/load-data", methods=["GET", "POST"])
+@app.api_route("/load-data", methods=["GET", "POST","HEAD"])
 def load_data():
     files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith(".txt")]
     if not files:
