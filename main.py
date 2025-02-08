@@ -136,7 +136,7 @@ def load_data():
     health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
 
-   test_df = test_df.dropna(axis=1, how='all')  # Drop empty columns
+    test_df = test_df.dropna(axis=1, how='all')  # Drop empty columns
     test_df = test_df.applymap(lambda x: str(x).strip())  # Strip whitespace
     test_df = test_df.apply(pd.to_numeric, errors='coerce')  # Convert to numeric
     
