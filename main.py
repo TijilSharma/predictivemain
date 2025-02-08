@@ -7,10 +7,11 @@ import os
 
 app = FastAPI()
 UPLOAD_FOLDER = "/tmp"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
 
 # Allow requests from localhost and your frontend
 origins = [
@@ -42,7 +43,7 @@ async def upload_csv(file: UploadFile = File(...)):
 
     return {"filename": file.filename, "location": file_location}
 
-@app.get("/load-data")
+@app.api_route("/load-data", methods=["GET", "POST"])
 def load_data():
     files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith(".txt")]
     if not files:
