@@ -122,8 +122,8 @@ def load_data():
         else:
             return "Immediate Action Required!"
 
-    health_df["Health Status"] = health_df["Predicted RUL"].apply(classify_health)
-    health_df["Next Maintenance Due"] = health_df["Predicted RUL"].apply(schedule_maintenance)
+    health_df["Health Status"] = health_df["Predicted_RUL"].apply(classify_health)
+    health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
 
    
