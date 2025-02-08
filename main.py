@@ -28,6 +28,10 @@ app.add_middleware(
 # Load the ML model
 model = load_model("LSTM_RUL.h5")  # Change if using joblib for Scikit-Learn models
 
+@app.get("/")
+async def root():
+    return {"message": "API is working!"}
+
 @app.post("/upload")
 async def upload_csv(file: UploadFile = File(...)):
     file_location = f"{UPLOAD_FOLDER}/{file.filename}"
