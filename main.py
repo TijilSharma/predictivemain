@@ -51,6 +51,7 @@ def load_data():
     file_path = f"{UPLOAD_FOLDER}/{latest_file}"
 
     test_df = pd.read_csv(file_path, sep=" ", header=None)
+    original_data_json = test_df.to_dict(orient="records")
 
     # Load the LSTM model
     model = load_model("LSTM_RUL.h5")
@@ -104,6 +105,10 @@ def load_data():
    
     # Convert DataFrame to JSON
     df_final = pd.read_csv("predictions.csv")
-    json_data = df_final.to_dict(orient="records")
+    predictions_json = df_final.to_dict(orient="records")
 
-    return {"filename": latest_file, "data": json_data}
+    return {
+        "filename": latest_file,
+        "original_data": original_data_json,  # ✅ First, send original data
+        "predictions": predictions_json      # ✅ Then, send predictions
+    }
