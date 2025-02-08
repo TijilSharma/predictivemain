@@ -136,55 +136,29 @@ def load_data():
     health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
 
-    test_df = test_df.dropna(axis=1, how='all')  # Drop empty columns
-    test_df = test_df.applymap(lambda x: str(x).strip())  # Strip whitespace
-    test_df = test_df.apply(pd.to_numeric, errors='coerce')  # Convert to numeric
+   # Load trained model
+    iforest_model = joblib.load("multi_sensor_model.pkl")
+    print("Model loaded successfully.")
     
-    # Step 2: Feature Selection
-    # Select relevant sensor features
-    sensor_features = [col for col in test_df.columns if "sensor" in col]
-    X = test_df[sensor_features]
+    # Load new dataset
+    df = pd.read_csv("PM_test.txt", sep=" ", header=None, names=columns, engine='python')
+    df = df.dropna(axis=1, how='all')
+    df = df.applymap(lambda x: str(x).strip())
+    df = df.apply(pd.to_numeric, errors='coerce')
     
-    # Handle missing values (fill NaN with column means)
+    # Select sensor features
+    sensor_features = [col for col in df.columns if "sensor" in col]
+    X = df[sensor_features]
     X.fillna(X.mean(), inplace=True)
     
-    # Step 3: Load the trained model and scaler
-    iforest_model = joblib.load("multi_sensor_model.pkl")
-    scaler = joblib.load("scaler.pkl")
+    # Predict anomalies
+    df["anomaly"] = iforest_model.predict(X)
     
-    # Step 4: Normalize the sensor data (using the same scaler as during training)
-    X_scaled = scaler.transform(X)
+    # Save results
+    df.to_csv("anomaly_results.csv", index=False)
+    print("Anomaly results saved as anomaly_results.csv")
     
-    # Step 5: Predict anomalies
-    test_df["anomaly"] = iforest_model.predict(X_scaled)  # -1 = anomaly, 1 = normal
     
-    # Step 6: Anomaly Detection (Identifying Anomalous Sensors)
-    anomalies = test_df[test_df["anomaly"] == -1]
-    normal_data = test_df[test_df["anomaly"] == 1]
-    
-    # Calculate mean and std of sensor data for normal points
-    sensor_means = normal_data[sensor_features].mean()
-    sensor_stds = normal_data[sensor_features].std()
-    
-    # Identify anomalous sensors for each anomaly
-    anomalies_detected = []
-    for index, row in anomalies.iterrows():
-        unit_id = row["unit_number"]  # Machine ID
-        anomalous_sensors = []
-        
-        # Check if any sensor reading is beyond 3 standard deviations
-        for sensor in sensor_features:
-            if abs(row[sensor] - sensor_means[sensor]) > (3 * sensor_stds[sensor]):
-                anomalous_sensors.append(sensor)
-        
-        anomalies_detected.append({"unit_number": unit_id, "anomalous_sensors": anomalous_sensors})
-    
-    # Step 7: Save anomaly report to CSV
-    anomaly_report = pd.DataFrame(anomalies_detected)
-    anomaly_report.to_csv("anomaly_report.csv", index=False)
-    print("Anomaly report saved as anomaly_report.csv")
-
-
     anomaly_df = pd.read_csv("anomaly_report.csv")
 
 
