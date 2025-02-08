@@ -26,8 +26,6 @@ app.add_middleware(
     allow_methods=["*"],  # Allow all methods (POST, GET, etc.)
     allow_headers=["*"],  # Allow all headers
 )
-# Load the ML model
-model = load_model("LSTM_RUL.h5")  # Change if using joblib for Scikit-Learn models
 
 @app.get("/")
 async def root():
@@ -99,36 +97,9 @@ def load_data():
     # Save predictions to CSV
     prediction_df.to_csv("predictions.csv", index=False)
     print("Predictions saved to predictions.csv!")
-    from sklearn.preprocessing import MinMaxScaler
-    import numpy as np
-    import pandas as pd
-
-    # Assuming rul_scaler was fit on the training RUL values
-    # Fit scaler on the training data RUL for demonstration
-    # Replace this with your actual scaler instance used during training
-    rul_scaler = MinMaxScaler()
-    train_rul = np.random.randint(1, 200, 100)  # Example training RUL values
-    rul_scaler.fit(train_rul.reshape(-1, 1))
-
-    # Example predictions (scaled down)
-    predicted_rul_scaled = np.random.rand(10)  # Scaled predictions in the range [0, 1]
-    predicted_rul_scaled = predicted_rul_scaled.reshape(-1, 1)
-
-    # Scale back to original RUL range
-    predicted_rul_original = rul_scaler.inverse_transform(predicted_rul_scaled)
-
-    # Save to DataFrame
-    prediction_df = pd.DataFrame({
-        "Unit Number": np.arange(1, len(predicted_rul_original) + 1),
-        "Predicted RUL": predicted_rul_original.flatten()
-    })
-
-    # Save to CSV
-    prediction_df.to_csv("predictions.csv", index=False)
-    print(prediction_df)
-
+   
     # Convert DataFrame to JSON
-    df_final = pd.read_csv(file_path)
+    df_final = pd.read_csv("predictions.csv")
     json_data = df_final.to_dict(orient="records")
 
     return {"filename": latest_file, "data": json_data}
