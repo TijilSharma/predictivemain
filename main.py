@@ -130,4 +130,4 @@ def load_data():
     # Convert DataFrame to JSON
     json_data = health_df.to_dict(orient="records")
 
-    return {"filename": latest_file,"original_data":intial_json, "final_data": json_data}
+    return {"filename": latest_file,"original_data":initial_json, "final_data": json_data}
