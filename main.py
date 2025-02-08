@@ -136,14 +136,14 @@ def load_data():
     health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
 
-   df = df.dropna(axis=1, how='all')  # Drop empty columns
-    df = df.applymap(lambda x: str(x).strip())  # Strip whitespace
-    df = df.apply(pd.to_numeric, errors='coerce')  # Convert to numeric
+   test_df = test_df.dropna(axis=1, how='all')  # Drop empty columns
+    test_df = test_df.applymap(lambda x: str(x).strip())  # Strip whitespace
+    test_df = test_df.apply(pd.to_numeric, errors='coerce')  # Convert to numeric
     
     # Step 2: Feature Selection
     # Select relevant sensor features
-    sensor_features = [col for col in df.columns if "sensor" in col]
-    X = df[sensor_features]
+    sensor_features = [col for col in test_df.columns if "sensor" in col]
+    X = test_df[sensor_features]
     
     # Handle missing values (fill NaN with column means)
     X.fillna(X.mean(), inplace=True)
@@ -159,8 +159,8 @@ def load_data():
     df["anomaly"] = iforest_model.predict(X_scaled)  # -1 = anomaly, 1 = normal
     
     # Step 6: Anomaly Detection (Identifying Anomalous Sensors)
-    anomalies = df[df["anomaly"] == -1]
-    normal_data = df[df["anomaly"] == 1]
+    anomalies = test_df[test_df["anomaly"] == -1]
+    normal_data = test_df[test_df["anomaly"] == 1]
     
     # Calculate mean and std of sensor data for normal points
     sensor_means = normal_data[sensor_features].mean()
