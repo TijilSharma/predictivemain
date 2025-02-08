@@ -101,9 +101,32 @@ def load_data():
     # Save predictions to CSV
     prediction_df.to_csv("predictions.csv", index=False)
     print("Predictions (scaled back) saved to predictions_scaled_back.csv!")
+
+    health_df = pd.read_csv("predictions.csv")
+    W1 = 122
+    W0 = 47
+    def classify_health(rul):
+    if rul > W1:
+        return "Low Risk"
+    elif W0 <= rul <= W1:
+        return "Medium Risk"
+    else:
+        return "High Risk"
+
+    def schedule_maintenance(rul):
+        if rul > W1:
+            return "Maintenance in 30 days"
+        elif W0 <= rul <= W1:
+            return "Urgent: 5 days"
+        else:
+            return "Immediate Action Required!"
+
+    health_df["Health Status"] = health_df["Predicted RUL"].apply(classify_health)
+    health_df["Next Maintenance Due"] = health_df["Predicted RUL"].apply(schedule_maintenance)
+
+
    
     # Convert DataFrame to JSON
-    df_final = pd.read_csv("predictions.csv")
-    json_data = df_final.to_dict(orient="records")
+    json_data = health_df.to_dict(orient="records")
 
     return {"filename": latest_file, "data": json_data}
