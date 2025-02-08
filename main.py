@@ -8,6 +8,23 @@ import os
 app = FastAPI()
 UPLOAD_FOLDER = "/tmp"
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Allow requests from localhost and your frontend
+origins = [
+    "http://localhost:5173",
+    "https://your-deployed-frontend.com"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all methods (POST, GET, etc.)
+    allow_headers=["*"],  # Allow all headers
+)
 # Load the ML model
 model = load_model("LSTM_RUL.h5")  # Change if using joblib for Scikit-Learn models
 
