@@ -156,7 +156,7 @@ def load_data():
     X_scaled = scaler.transform(X)
     
     # Step 5: Predict anomalies
-    df["anomaly"] = iforest_model.predict(X_scaled)  # -1 = anomaly, 1 = normal
+    test_df["anomaly"] = iforest_model.predict(X_scaled)  # -1 = anomaly, 1 = normal
     
     # Step 6: Anomaly Detection (Identifying Anomalous Sensors)
     anomalies = test_df[test_df["anomaly"] == -1]
