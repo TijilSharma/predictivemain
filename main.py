@@ -58,15 +58,6 @@ def load_data():
     # Summary of the model architecture
     model.summary()
 
-    # Parameters
-    sequence_length = 50  # Same as used during training
-    sequence_cols = ["id", "cycle", "setting1", "setting2", "setting3"] + [f"s{i}" for i in range(1, 22)]
-
-    
-    # Drop extra columns and assign proper column names
-    test_df.drop(test_df.columns[[26, 27]], axis=1, inplace=True)
-    test_df.columns = sequence_cols
-
     # Normalize data if required (ensure test data matches preprocessing from training)
     # Assuming Min-Max Normalization
     from sklearn.preprocessing import MinMaxScaler
