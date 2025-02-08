@@ -141,7 +141,7 @@ def load_data():
     print("Model loaded successfully.")
     
     # Load new dataset
-    df = pd.read_csv("PM_test.txt", sep=" ", header=None, names=columns, engine='python')
+    df = pd.read_csv(file_path, sep=" ", header=None, names=columns, engine='python')
     df = df.dropna(axis=1, how='all')
     df = df.applymap(lambda x: str(x).strip())
     df = df.apply(pd.to_numeric, errors='coerce')
