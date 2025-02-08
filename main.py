@@ -4,6 +4,10 @@ import joblib
 from tensorflow.keras.models import load_model
 import numpy as np
 import os
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import IsolationForest
+import joblib
+
 
 app = FastAPI()
 UPLOAD_FOLDER = "/tmp"
@@ -58,6 +62,12 @@ def load_data():
 
     # Summary of the model architecture
     model.summary()
+    #DATA PREPROCESSING 
+    columns = ["unit_number", "time", "sensor_1", "sensor_2", "sensor_3", "sensor_4",
+           "sensor_5", "sensor_6", "sensor_7", "sensor_8", "sensor_9", "sensor_10",
+           "sensor_11", "sensor_12", "sensor_13", "sensor_14", "sensor_15",
+           "sensor_16", "sensor_17", "sensor_18", "sensor_19", "sensor_20", 
+           "sensor_21"]
 
     # Parameters
     sequence_length = 50  # Same as used during training
@@ -67,7 +77,7 @@ def load_data():
     # Drop extra columns and assign proper column names
     test_df.drop(test_df.columns[[26, 27]], axis=1, inplace=True)
     test_df.columns = sequence_cols
-
+    
     # Normalize data if required (ensure test data matches preprocessing from training)
     # Assuming Min-Max Normalization
     from sklearn.preprocessing import MinMaxScaler
@@ -126,8 +136,29 @@ def load_data():
     health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
 
-   
+    model = joblib.load("multi_sensor_model.pkl")
+    print("Model loaded successfully!")
+
+    test_df = test_df.dropna(axis=1, how='all')  # Drop empty columns
+    test_df = test_df.applymap(lambda x: str(x).strip())  # Strip whitespace
+    test_df = test_df.apply(pd.to_numeric, errors='coerce')  # Convert to numeric
+
+    sensor_features = [col for col in df.columns if "sensor" in col]
+    X = test_df[sensor_features]
+    X.fillna(X.mean(), inplace=True)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    predictions = model.predict(X_scaled)
+    test_df["Predicted_Price"] = predictions
+    test_df.to_csv("predictions_anomaly.csv", index=False)
+    print("Predictions saved to predictions.csv")
+
+
+    anomaly_df = pd.read_csv("predictions_anomaly.csv")
+
+
     # Convert DataFrame to JSON
     json_data = health_df.to_dict(orient="records")
+    json_anomaly = anomaly_df.to_dict(orient="records")
 
-    return {"filename": latest_file,"original_data":initial_json, "final_data": json_data}
+    return {"filename": latest_file,"original_data":initial_json, "final_data_RUL": json_data, "final_data_ANA": json_anomaly}
