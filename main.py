@@ -41,7 +41,7 @@ async def upload_csv(file: UploadFile = File(...)):
 
     return {"filename": file.filename, "location": file_location}
 
-@app.api_route("/load-data", methods=["GET", "POST","HEAD"])
+@app.api_route("/load-data", methods=["GET", "POST", "HEAD"])
 def load_data():
     files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith(".txt")]
     if not files:
@@ -50,52 +50,44 @@ def load_data():
     latest_file = sorted(files)[-1]  # Get the latest uploaded file
     file_path = f"{UPLOAD_FOLDER}/{latest_file}"
 
+    # ✅ Send original data first
     test_df = pd.read_csv(file_path, sep=" ", header=None)
+    original_data_json = test_df.to_dict(orient="records")
 
     # Load the LSTM model
     model = load_model("LSTM_RUL.h5")
-
-    # Summary of the model architecture
     model.summary()
 
-    # Normalize data if required (ensure test data matches preprocessing from training)
-    # Assuming Min-Max Normalization
     from sklearn.preprocessing import MinMaxScaler
     scaler = MinMaxScaler()
     test_df[sequence_cols[2:]] = scaler.fit_transform(test_df[sequence_cols[2:]])
 
-    # Preprocess test data: Create sequences
+    sequence_length = 50
     seq_array_test_last = [
         test_df[test_df["id"] == unit][sequence_cols[1:]].values[-sequence_length:]
         for unit in test_df["id"].unique()
         if len(test_df[test_df["id"] == unit]) >= sequence_length
     ]
-    # Convert to NumPy array
     seq_array_test_last = np.asarray(seq_array_test_last).astype(np.float32)
-    print(f"Shape of test sequences: {seq_array_test_last.shape}")
 
-    # Predict Remaining Useful Life (RUL)
     predictions = model.predict(seq_array_test_last)
-    print("Predictions generated successfully!")
-
-    # Scale predictions back to original range
+    
     min_rul, max_rul = 0, 361
-    predictions = predictions_scaled * (max_rul - min_rul) + min_rul
+    predictions = predictions * (max_rul - min_rul) + min_rul
 
-    # Prepare predictions for saving
-    unit_ids = test_df["id"].unique()[-len(predictions):]  # Match unit IDs with predictions
+    unit_ids = test_df["id"].unique()[-len(predictions):]
     prediction_df = pd.DataFrame({
         "unit_number": unit_ids,
         "Predicted_RUL": predictions.flatten()
     })
-    
-    # Save predictions to CSV
+
     prediction_df.to_csv("predictions.csv", index=False)
-    print("Predictions (scaled back) saved to predictions_scaled_back.csv!")
-   
-    # Convert DataFrame to JSON
+
     df_final = pd.read_csv("predictions.csv")
-    json_data = df_final.to_dict(orient="records")
+    predictions_json = df_final.to_dict(orient="records")
 
-    return {"filename": latest_file, "data": json_data}
-
+    return {
+        "filename": latest_file,
+        "original_data": original_data_json,  # ✅ First, send original data
+        "predictions": predictions_json      # ✅ Then, send predictions
+    }
