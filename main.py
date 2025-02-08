@@ -87,16 +87,20 @@ def load_data():
     predictions = model.predict(seq_array_test_last)
     print("Predictions generated successfully!")
 
+    # Scale predictions back to original range
+    min_rul, max_rul = 0, 361
+    predictions = predictions_scaled * (max_rul - min_rul) + min_rul
+
     # Prepare predictions for saving
     unit_ids = test_df["id"].unique()[-len(predictions):]  # Match unit IDs with predictions
     prediction_df = pd.DataFrame({
         "unit_number": unit_ids,
         "Predicted_RUL": predictions.flatten()
     })
-
+    
     # Save predictions to CSV
     prediction_df.to_csv("predictions.csv", index=False)
-    print("Predictions saved to predictions.csv!")
+    print("Predictions (scaled back) saved to predictions_scaled_back.csv!")
    
     # Convert DataFrame to JSON
     df_final = pd.read_csv("predictions.csv")
