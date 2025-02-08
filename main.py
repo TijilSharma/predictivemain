@@ -51,7 +51,6 @@ def load_data():
     file_path = f"{UPLOAD_FOLDER}/{latest_file}"
 
     test_df = pd.read_csv(file_path, sep=" ", header=None)
-    original_data_json = test_df.to_dict(orient="records")
 
     # Load the LSTM model
     model = load_model("LSTM_RUL.h5")
@@ -85,7 +84,7 @@ def load_data():
     print(f"Shape of test sequences: {seq_array_test_last.shape}")
 
     # Predict Remaining Useful Life (RUL)
-    predictions_scaled = model.predict(seq_array_test_last)
+    predictions = model.predict(seq_array_test_last)
     print("Predictions generated successfully!")
 
     # Scale predictions back to original range
@@ -105,10 +104,6 @@ def load_data():
    
     # Convert DataFrame to JSON
     df_final = pd.read_csv("predictions.csv")
-    predictions_json = df_final.to_dict(orient="records")
+    json_data = df_final.to_dict(orient="records")
 
-    return {
-        "filename": latest_file,
-        "original_data": original_data_json,  # ✅ First, send original data
-        "predictions": predictions_json      # ✅ Then, send predictions
-    }
+    return {"filename": latest_file, "data": json_data}
