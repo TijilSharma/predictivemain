@@ -40,9 +40,9 @@ async def upload_csv(file: UploadFile = File(...)):
 
 @app.get("/load-data")
 def load_data():
-    files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith(".csv")]
+    files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith(".txt")]
     if not files:
-        return {"error": "No CSV files found"}
+        return {"error": "No TXT files found"}
 
     latest_file = sorted(files)[-1]  # Get the latest uploaded file
     file_path = f"{UPLOAD_FOLDER}/{latest_file}"
