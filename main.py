@@ -9,7 +9,7 @@ app = FastAPI()
 UPLOAD_FOLDER = "/tmp"
 
 # Load the ML model
-model = load_model("model.h5")  # Change if using joblib for Scikit-Learn models
+model = load_model("LSTM_RUL.h5")  # Change if using joblib for Scikit-Learn models
 
 @app.post("/upload")
 async def upload_csv(file: UploadFile = File(...)):
