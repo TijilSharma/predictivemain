@@ -148,7 +148,6 @@ def load_data():
     
     sensor_features = [f"s{i}" for i in range(1, 22) if f"s{i}" in df.columns]
     X = df[sensor_features]
-    X.fillna(X.mean(), inplace=True) 
     
     
     df["anomaly"] = iforest_model.predict(X)
