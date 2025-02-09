@@ -156,9 +156,30 @@ def load_data():
     
     df.to_csv("anomaly_results.csv", index=False)
     print("Anomaly results saved as anomaly_results.csv")
-        
-        
-    anomaly_df = pd.read_csv("anomaly_results.csv")
+    sensor_means = normal_data[sensor_features].mean()
+    sensor_stds = normal_data[sensor_features].std()
+    
+    # Initialize anomaly detection results
+    anomalies_detected = []
+    
+    for unit_id in anomalies["id"].unique():
+        unit_anomalies = anomalies[anomalies["id"] == unit_id]
+        anomalous_sensors = []
+    
+        # Check each sensor for anomalies
+        for sensor in sensor_features:
+            if any(abs(unit_anomalies[sensor] - sensor_means[sensor]) > (3 * sensor_stds[sensor])):
+                anomalous_sensors.append(sensor)
+    
+        # Append aggregated anomalies for the unit
+        anomalies_detected.append({"id": unit_id, "anomalous_sensors": anomalous_sensors})
+    
+    # Save the anomaly report
+    anomaly_report = pd.DataFrame(anomalies_detected)
+    anomaly_report.to_csv("anomaly_report.csv", index=False)
+    print("Anomaly report saved to anomaly_report.csv")    
+            
+    anomaly_df = pd.read_csv("anomaly_report.csv")
 
 
     # Convert DataFrame to JSON
