@@ -165,7 +165,7 @@ def load_data():
     anomaly_report.to_csv("anomaly_report.csv", index=False)
     print("Anomaly report saved to anomaly_report.csv")
     
-    anomaly_df = pd.read_csv("anomaly_report.csv")
+    #anomaly_df = pd.read_csv("anomaly_report.csv")
 
     # Sanitize data function to replace NaN or Infinity values with None
     def sanitize_data(data):
@@ -180,7 +180,7 @@ def load_data():
 
     # Sanitize the final data
     json_data = sanitize_data(health_df.to_dict(orient="records"))
-    json_anomaly = sanitize_data(anomaly_df.to_dict(orient="records"))
+    json_anomaly = sanitize_data(anomaly_report.to_dict(orient="records"))
 
     return {"filename": latest_file, "original_data": initial_json, "final_data_RUL": json_data, "final_data_ANA": json_anomaly}
 
