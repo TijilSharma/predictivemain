@@ -156,6 +156,9 @@ def load_data():
     
     df.to_csv("anomaly_results.csv", index=False)
     print("Anomaly results saved as anomaly_results.csv")
+
+    anomalies = df[df["anomaly"] == -1]
+    normal_data = df[df["anomaly"] == 1]
     sensor_means = normal_data[sensor_features].mean()
     sensor_stds = normal_data[sensor_features].std()
     
