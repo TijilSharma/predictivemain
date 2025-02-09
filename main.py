@@ -7,15 +7,13 @@ import os
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import IsolationForest
 import joblib
-
+import math
 
 app = FastAPI()
 UPLOAD_FOLDER = "/tmp"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-
 from fastapi.middleware.cors import CORSMiddleware
-
 
 # Allow requests from localhost and your frontend
 origins = [
@@ -28,7 +26,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],  # Allow all methods (POST, GET, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_headers=["*"],  # Allow all headers
 )
 
 @app.get("/")
@@ -59,27 +57,22 @@ def load_data():
 
     # Load the LSTM model
     model = load_model("LSTM_RUL.h5")
-
-    # Summary of the model architecture
     model.summary()
-    #DATA PREPROCESSING 
-    columns = ["unit_number", "time", "sensor_1", "sensor_2", "sensor_3", "sensor_4",
-           "sensor_5", "sensor_6", "sensor_7", "sensor_8", "sensor_9", "sensor_10",
-           "sensor_11", "sensor_12", "sensor_13", "sensor_14", "sensor_15",
-           "sensor_16", "sensor_17", "sensor_18", "sensor_19", "sensor_20", 
-           "sensor_21"]
 
-    # Parameters
+    # Data Preprocessing
+    columns = ["unit_number", "time", "sensor_1", "sensor_2", "sensor_3", "sensor_4",
+               "sensor_5", "sensor_6", "sensor_7", "sensor_8", "sensor_9", "sensor_10",
+               "sensor_11", "sensor_12", "sensor_13", "sensor_14", "sensor_15",
+               "sensor_16", "sensor_17", "sensor_18", "sensor_19", "sensor_20", 
+               "sensor_21"]
+
     sequence_length = 50  # Same as used during training
     sequence_cols = ["id", "cycle", "setting1", "setting2", "setting3"] + [f"s{i}" for i in range(1, 22)]
 
-    
-    # Drop extra columns and assign proper column names
     test_df.drop(test_df.columns[[26, 27]], axis=1, inplace=True)
     test_df.columns = sequence_cols
-    
+
     # Normalize data if required (ensure test data matches preprocessing from training)
-    # Assuming Min-Max Normalization
     from sklearn.preprocessing import MinMaxScaler
     scaler = MinMaxScaler()
     test_df[sequence_cols[2:]] = scaler.fit_transform(test_df[sequence_cols[2:]])
@@ -90,7 +83,6 @@ def load_data():
         for unit in test_df["id"].unique()
         if len(test_df[test_df["id"] == unit]) >= sequence_length
     ]
-    # Convert to NumPy array
     seq_array_test_last = np.asarray(seq_array_test_last).astype(np.float32)
     print(f"Shape of test sequences: {seq_array_test_last.shape}")
 
@@ -116,6 +108,7 @@ def load_data():
     health_df = pd.read_csv("predictions.csv")
     W1 = 122
     W0 = 47
+
     def classify_health(rul):
         if rul > W1:
             return "Low Risk"
@@ -135,57 +128,59 @@ def load_data():
     health_df["Health Status"] = health_df["Predicted_RUL"].apply(classify_health)
     health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
-
+    # Anomaly Detection
     iforest_model = joblib.load("multi_sensor_model.pkl")
     print("Model loaded successfully.")
     
     sequence_cols = ["id", "cycle", "setting1", "setting2", "setting3"] + [f"s{i}" for i in range(1, 22)]
-    
-    
     df = pd.read_csv(file_path, sep=" ", header=None)
     df.drop(df.columns[[26, 27]], axis=1, inplace=True)
     df.columns = sequence_cols
     
     sensor_features = [f"s{i}" for i in range(1, 22) if f"s{i}" in df.columns]
     X = df[sensor_features]
-    
+    X.fillna(X.mean(), inplace=True) 
     
     df["anomaly"] = iforest_model.predict(X)
     
-    
     df.to_csv("anomaly_results.csv", index=False)
     print("Anomaly results saved as anomaly_results.csv")
-
-    anomalies = df[df["anomaly"] == -1]
-    normal_data = df[df["anomaly"] == 1]
-    sensor_means = normal_data[sensor_features].mean()
-    sensor_stds = normal_data[sensor_features].std()
     
-    # Initialize anomaly detection results
+    sensor_means = df[sensor_features].mean()
+    sensor_stds = df[sensor_features].std()
+    
     anomalies_detected = []
     
-    for unit_id in anomalies["id"].unique():
-        unit_anomalies = anomalies[anomalies["id"] == unit_id]
+    for unit_id in df["id"].unique():
+        unit_anomalies = df[df["id"] == unit_id]
         anomalous_sensors = []
     
-        # Check each sensor for anomalies
         for sensor in sensor_features:
             if any(abs(unit_anomalies[sensor] - sensor_means[sensor]) > (3 * sensor_stds[sensor])):
                 anomalous_sensors.append(sensor)
     
-        # Append aggregated anomalies for the unit
         anomalies_detected.append({"id": unit_id, "anomalous_sensors": anomalous_sensors})
     
-    # Save the anomaly report
     anomaly_report = pd.DataFrame(anomalies_detected)
     anomaly_report.to_csv("anomaly_report.csv", index=False)
-    print("Anomaly report saved to anomaly_report.csv")    
-            
+    print("Anomaly report saved to anomaly_report.csv")
+    
     anomaly_df = pd.read_csv("anomaly_report.csv")
 
+    # Sanitize data function to replace NaN or Infinity values with None
+    def sanitize_data(data):
+        if isinstance(data, float):
+            if math.isnan(data) or math.isinf(data):
+                return None  # or any placeholder value
+        elif isinstance(data, list):
+            return [sanitize_data(item) for item in data]
+        elif isinstance(data, dict):
+            return {key: sanitize_data(value) for key, value in data.items()}
+        return data
 
-    # Convert DataFrame to JSON
-    json_data = health_df.to_dict(orient="records")
-    json_anomaly = anomaly_df.to_dict(orient="records")
+    # Sanitize the final data
+    json_data = sanitize_data(health_df.to_dict(orient="records"))
+    json_anomaly = sanitize_data(anomaly_df.to_dict(orient="records"))
 
-    return {"filename": latest_file,"original_data":initial_json, "final_data_RUL": json_data, "final_data_ANA": json_anomaly}
+    return {"filename": latest_file, "original_data": initial_json, "final_data_RUL": json_data, "final_data_ANA": json_anomaly}
+
