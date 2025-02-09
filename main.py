@@ -55,7 +55,7 @@ def load_data():
     file_path = f"{UPLOAD_FOLDER}/{latest_file}"
 
     test_df = pd.read_csv(file_path, sep=" ", header=None)
-    initial_json = test_df.to_json(orient="records")
+    initial_json = test_df.to_dict(orient="records")
 
     # Load the LSTM model
     model = load_model("LSTM_RUL.h5")
