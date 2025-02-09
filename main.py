@@ -142,7 +142,7 @@ def load_data():
     sequence_cols = ["id", "cycle", "setting1", "setting2", "setting3"] + [f"s{i}" for i in range(1, 22)]
     
     
-    df = pd.read_csv(file_name, sep=" ", header=None)
+    df = pd.read_csv(file_path, sep=" ", header=None)
     df.drop(df.columns[[26, 27]], axis=1, inplace=True)
     df.columns = sequence_cols
     
