@@ -136,29 +136,28 @@ def load_data():
     health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
 
-   # Load trained model
     iforest_model = joblib.load("multi_sensor_model.pkl")
     print("Model loaded successfully.")
     
-    # Load new dataset
-    df = pd.read_csv(file_path, sep=" ", header=None, names=columns, engine='python')
-    df = df.dropna(axis=1, how='all')
-    df = df.applymap(lambda x: str(x).strip())
-    df = df.apply(pd.to_numeric, errors='coerce')
+    sequence_cols = ["id", "cycle", "setting1", "setting2", "setting3"] + [f"s{i}" for i in range(1, 22)]
     
-    # Select sensor features
-    sensor_features = [col for col in df.columns if "sensor" in col]
+    
+    df = pd.read_csv(file_name, sep=" ", header=None)
+    df.drop(df.columns[[26, 27]], axis=1, inplace=True)
+    df.columns = sequence_cols
+    
+    sensor_features = [f"s{i}" for i in range(1, 22) if f"s{i}" in df.columns]
     X = df[sensor_features]
-    X.fillna(X.mean(), inplace=True)
+    X.fillna(X.mean(), inplace=True) 
     
-    # Predict anomalies
+    
     df["anomaly"] = iforest_model.predict(X)
     
-    # Save results
+    
     df.to_csv("anomaly_results.csv", index=False)
     print("Anomaly results saved as anomaly_results.csv")
-    
-    
+        
+        
     anomaly_df = pd.read_csv("anomaly_report.csv")
 
 
