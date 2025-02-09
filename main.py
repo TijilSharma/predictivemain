@@ -158,7 +158,7 @@ def load_data():
     print("Anomaly results saved as anomaly_results.csv")
         
         
-    anomaly_df = pd.read_csv("anomaly_report.csv")
+    anomaly_df = pd.read_csv("anomaly_results.csv")
 
 
     # Convert DataFrame to JSON
