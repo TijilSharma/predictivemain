@@ -55,29 +55,21 @@ def load_data():
     test_df = pd.read_csv(file_path, sep=" ", header=None)
     initial_json = test_df.to_dict(orient="records")
 
-    # Load the LSTM model
+ 
     model = load_model("LSTM_RUL.h5")
     model.summary()
 
-    # Data Preprocessing
-    columns = ["unit_number", "time", "sensor_1", "sensor_2", "sensor_3", "sensor_4",
-               "sensor_5", "sensor_6", "sensor_7", "sensor_8", "sensor_9", "sensor_10",
-               "sensor_11", "sensor_12", "sensor_13", "sensor_14", "sensor_15",
-               "sensor_16", "sensor_17", "sensor_18", "sensor_19", "sensor_20", 
-               "sensor_21"]
-
-    sequence_length = 50  # Same as used during training
+    sequence_length = 50  
     sequence_cols = ["id", "cycle", "setting1", "setting2", "setting3"] + [f"s{i}" for i in range(1, 22)]
 
     test_df.drop(test_df.columns[[26, 27]], axis=1, inplace=True)
     test_df.columns = sequence_cols
 
-    # Normalize data if required (ensure test data matches preprocessing from training)
     from sklearn.preprocessing import MinMaxScaler
     scaler = MinMaxScaler()
     test_df[sequence_cols[2:]] = scaler.fit_transform(test_df[sequence_cols[2:]])
 
-    # Preprocess test data: Create sequences
+  
     seq_array_test_last = [
         test_df[test_df["id"] == unit][sequence_cols[1:]].values[-sequence_length:]
         for unit in test_df["id"].unique()
@@ -86,22 +78,21 @@ def load_data():
     seq_array_test_last = np.asarray(seq_array_test_last).astype(np.float32)
     print(f"Shape of test sequences: {seq_array_test_last.shape}")
 
-    # Predict Remaining Useful Life (RUL)
+
     predictions_scaled = model.predict(seq_array_test_last)
     print("Predictions generated successfully!")
 
-    # Scale predictions back to original range
+
     min_rul, max_rul = 0, 361
     predictions = predictions_scaled * (max_rul - min_rul) + min_rul
 
-    # Prepare predictions for saving
     unit_ids = test_df["id"].unique()[-len(predictions):]  # Match unit IDs with predictions
     prediction_df = pd.DataFrame({
         "unit_number": unit_ids,
         "Predicted_RUL": predictions.flatten()
     })
     
-    # Save predictions to CSV
+
     prediction_df.to_csv("predictions.csv", index=False)
     print("Predictions (scaled back) saved to predictions_scaled_back.csv!")
 
@@ -128,6 +119,7 @@ def load_data():
     health_df["Health Status"] = health_df["Predicted_RUL"].apply(classify_health)
     health_df["Next Maintenance Due"] = health_df["Predicted_RUL"].apply(schedule_maintenance)
 
+
     # Anomaly Detection
     iforest_model = joblib.load("multi_sensor_model.pkl")
     print("Model loaded successfully.")
@@ -146,7 +138,7 @@ def load_data():
     df.to_csv("anomaly_results.csv", index=False)
     print("Anomaly results saved as anomaly_results.csv")
     
-    sensor_means = df[sensor_features].mean()
+    """sensor_means = df[sensor_features].mean()
     sensor_stds = df[sensor_features].std()
     
     anomalies_detected = []
@@ -167,20 +159,10 @@ def load_data():
     
     #anomaly_df = pd.read_csv("anomaly_report.csv")
 
-    # Sanitize data function to replace NaN or Infinity values with None
-    def sanitize_data(data):
-        if isinstance(data, float):
-            if math.isnan(data) or math.isinf(data):
-                return None  # or any placeholder value
-        elif isinstance(data, list):
-            return [sanitize_data(item) for item in data]
-        elif isinstance(data, dict):
-            return {key: sanitize_data(value) for key, value in data.items()}
-        return data
+    """
 
     # Sanitize the final data
-    json_data = sanitize_data(health_df.to_dict(orient="records"))
-    json_anomaly = sanitize_data(anomaly_report.to_dict(orient="records"))
+    json_data = health_df.to_dict(orient="records")
+    json_anomaly = (anomaly_results.to_dict(orient="records"))
 
     return {"filename": latest_file, "original_data": initial_json, "final_data_RUL": json_data, "final_data_ANA": json_anomaly}
-
