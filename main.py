@@ -155,14 +155,14 @@ def load_data():
     
     anomaly_report = pd.DataFrame(anomalies_detected)
     anomaly_report.to_csv("anomaly_report.csv", index=False)
-    print("Anomaly report saved to anomaly_report.csv")
+    print("Anomaly report saved to anomaly_report.csv")"""
     
-    #anomaly_df = pd.read_csv("anomaly_report.csv")
+    anomaly_df = pd.read_csv("anomaly_results.csv")
 
-    """
+    
 
     # Sanitize the final data
     json_data = health_df.to_dict(orient="records")
-    json_anomaly = (anomaly_results.to_dict(orient="records"))
+    json_anomaly = (anomaly_df.to_dict(orient="records"))
 
     return {"filename": latest_file, "original_data": initial_json, "final_data_RUL": json_data, "final_data_ANA": json_anomaly}
